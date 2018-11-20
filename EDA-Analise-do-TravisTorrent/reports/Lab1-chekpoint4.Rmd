@@ -1,0 +1,370 @@
+---
+title: "FPCC II - Lab 1, Checkpoint 4"
+author: "Amanda Souza"
+date: "28/03/2018"
+output: html_document
+---
+
+Relatório Final
+===============
+
+### Sumário
+1. Introdução
+2. Perguntas a responder
+3. Variáveis
+4. Análise Exploratória
+5. Respondendo as perguntas
+
+###1) Introdução
+
+###2)
+
+```{r}
+summary(projetos)
+```
+
+```{r}
+projetos <- projetos[projetos$new_members >= 0, ]
+projetos <- projetos %>% 
+    filter(lang != "javascript")
+```
+```{r}
+new = projetos %>% group_by(gh_project_name) %>% 
+    filter(new_members > 0) %>% 
+    ggplot(aes(x = build_failed_prop)) + 
+    geom_histogram(bins = 50, fill = "white", color = "blue") + 
+    xlab("Falha de Build (com novos membros)") +
+    ylab("Projetos") +
+    geom_rug(alpha = .5) + theme_gray()
+
+old = projetos %>% group_by(gh_project_name) %>% 
+    filter(new_members == 0) %>% 
+    ggplot(aes(x = build_failed_prop)) + 
+    geom_histogram(bins = 50, fill = "white", color = "blue") + 
+    xlab("Falha de Build (sem novos membros)") +
+    ylab("Projetos") +
+    geom_rug(alpha = .5) + theme_gray()
+
+gridExtra::grid.arrange(new, old, nrow=2)
+```
+
+```{r}
+new = projetos %>% 
+    group_by(gh_project_name) %>% 
+    filter(new_members > 0) %>% 
+    ggplot(aes(x = build_failed_prop)) + 
+    geom_density(fill="slateblue", color = "slateblue")  + 
+    scale_x_log10() + 
+    xlab("Falha de Build (com novos membros)") +
+    ylab("Projetos") + theme_gray()
+
+old = projetos %>% 
+    group_by(gh_project_name) %>% 
+    filter(new_members == 0) %>% 
+    ggplot(aes(x = build_failed_prop)) + 
+    geom_density(fill="slateblue", color = "slateblue")  + 
+    scale_x_log10() +
+    xlab("Falha de Build (sem novos membros)") +
+    ylab("Projetos") + theme_gray()
+
+gridExtra::grid.arrange(new, old, nrow=2)
+```
+
+```{r}
+new = projetos %>% 
+    group_by(gh_project_name) %>% 
+    filter(new_members > 0) %>% 
+    ggplot(aes(x = build_failed_prop, y = new_members)) + 
+    geom_point(position = position_jitter(width = 0.1, height = 0), size = 2, alpha = .5, fill="blue", color = "blue") + 
+    scale_x_log10() + 
+    xlab("Falha de Build (com novos membros)") +
+    ylab("Projetos") + theme_gray()
+
+old = projetos %>% 
+    group_by(gh_project_name) %>% 
+    filter(new_members == 0) %>% 
+    ggplot(aes(x = build_failed_prop, y = new_members)) + 
+    geom_point(position = position_jitter(width = 0.1, height = 0), size = 2, alpha = .5, fill="blue", color = "blue") + 
+    scale_x_log10() +
+    xlab("Falha de Build (sem novos membros)") +
+    ylab("Projetos") + theme_gray()
+
+grid.arrange(new, old, ncol=1)
+```
+
+```{r}
+new <- projetos %>%
+    filter(new_members > 0) 
+
+old <- projetos %>%
+    filter(new_members == 0)
+
+new_g =  ggplot(new, aes(x = build_failed_prop, y = new_members)) +
+  xlab("Erros de build(com novos membros)") + ylab("Novos membros") + 
+  geom_line(aes(colour=build_failed_prop)) + 
+  geom_point(aes(colour=build_failed_prop)) + 
+  scale_x_continuous() + 
+  theme_bw()
+
+old_g = ggplot(old, aes(x = build_failed_prop, y = new_members)) +
+  xlab("Erros de build(sem novos membros)") + ylab("Novos membros") + 
+  geom_line(aes(colour=build_failed_prop)) + 
+  geom_point(aes(colour=build_failed_prop)) + 
+  scale_x_continuous() + 
+  theme_bw()
+
+gridExtra::grid.arrange(new_g, old_g, ncol=1)
+```
+
+```{r}
+
+barPlot <- function(data, column)
+{
+  plot <- data %>%
+    ggplot(aes_string(x = column)) +
+    geom_bar() +
+    geom_vline(xintercept = mean(data[[column]]), color="blue")
+  return(plot)
+}
+
+p1 <- barPlot(new, "new_members")
+p2 <- barPlot(new, "build_failed_prop")
+
+gridExtra::grid.arrange(p1, p2, ncol=1)
+
+new <- projetos %>%
+    filter(new_members > 0) 
+
+old <- projetos %>%
+    filter(new_members == 0)
+
+cor(new$new_members, 
+    new$build_failed_prop, 
+    method = ("pearson"))
+
+ggplot(new, aes(x=new_members, y=build_failed_prop)) + 
+  xlab("Erros de build") + ylab("Novos Membros") +
+  geom_jitter(height=0.25, alpha=0.6, aes(color=as.character(lang))) + 
+  scale_color_manual(name="Linguagens", labels=c("Ruby","Java"),
+                     values=c("red","blue"))+
+  theme_bw() +
+  theme(axis.ticks=element_blank()) 
+
+
+```
+
+```{r}
+
+merge = merge %>% 
+    group_by(gh_project_name)  #%>% 
+    #filter(new_members > 0)
+
+new_g =  ggplot(merge, aes(x = build_failed_prop, y = merge)) +
+  xlab("Merge (Falha)") + ylab("N. de Merge") + 
+  geom_line(aes(colour=build_failed_prop)) + 
+  geom_point(aes(colour=build_failed_prop)) + 
+  scale_x_continuous() + scale_y_log10()+
+  theme_bw()
+
+old_g = ggplot(merge, aes(x = build_sucess_prop, y = merge)) +
+  xlab("Merge (Sucesso)") + ylab("N. de Merge") +
+  geom_line(aes(colour=build_sucess_prop)) + 
+  geom_point(aes(colour=build_sucess_prop)) + 
+  scale_x_continuous() + scale_y_log10()+
+  theme_bw()
+
+gridExtra::grid.arrange(new_g, old_g, ncol=1)
+
+bar_falha = ggplot(merge, aes(reorder(merge, build_failed_prop), y=build_failed_prop)) +
+  xlab("Qtd de merge") + 
+  ylab("Build(falha)") + 
+  geom_bar(size=1.0, stat="identity", 
+           alpha=1.0, width = 0.9, color = "blue") + 
+  theme_bw()
+
+bar_sucesso = ggplot(merge, aes(reorder(merge, build_sucess_prop), y=build_sucess_prop)) +
+  xlab("Qtd de merge") + 
+  ylab("Build(sucesso)") + 
+  geom_bar(size=1.0, stat="identity", 
+           alpha=1.0, width = 0.9, color = "blue") + 
+  theme_bw()
+
+gridExtra::grid.arrange(bar_falha, bar_sucesso, ncol=1)
+scatterPlot <- function(data, col1, col2)
+    
+{
+  plot <- data %>%
+    ggplot(aes_string(x = col1, y = col2, colour = col2)) +
+    geom_point(position = position_jitter(width = 0.9, height = 0), alpha=0.3) + scale_x_log10() +
+    theme(legend.position = "none")
+  return(plot)
+}
+
+p1 <- scatterPlot(merge, "merge", "build_failed_prop")
+p2 <- scatterPlot(merge, "merge", "build_sucess_prop")
+
+gridExtra::grid.arrange(p1, p2, ncol=1)
+
+  ggplot(merge, aes(x = merge, y = build_failed_prop, fill = merge)) +
+  geom_boxplot() +
+  geom_hline(yintercept = mean(merge$merge)) +
+  labs(x = "Partido", y = "Valor Líquido (log)") +
+  ggtitle("Distribuição dos valores gastos por partido em 2015") +
+  theme(legend.position = "none")
+  
+ ggplot(merge, aes(x= 0, y = build_failed_prop)) +
+  geom_boxplot() +
+  labs(x = "", y = "Cota por deputado") +
+  ggtitle("Distribuição das cotas por estado (para cada deputado)")
+ 
+ new = merge %>% 
+    group_by(gh_project_name) %>% 
+    ggplot(aes(x = build_sucess_prop)) + 
+    geom_density(fill="slateblue", color = "slateblue")  + 
+    scale_x_log10() + 
+    xlab("Sucesso") +
+    ylab("Projetos") + theme_gray()
+
+old = merge %>% 
+    group_by(gh_project_name) %>% 
+    ggplot(aes(x = build_failed_prop)) + 
+    geom_density(fill="slateblue", color = "slateblue")  + 
+    scale_x_log10() +
+    xlab("Falha") +
+    ylab("Projetos") + theme_gray()
+
+gridExtra::grid.arrange(new, old, nrow=2)
+ 
+```
+
+###4) Análise Exploratória
+
+```{r}
+summary(tempo)
+```
+```{r}
+
+menor = tempo %>% 
+    group_by(gh_project_name) %>% 
+    filter(team < 3.0 )
+
+medio = tempo %>% 
+    group_by(gh_project_name) %>% 
+    filter(team > 3.0 && team < 9.0)
+
+grande = tempo %>% 
+    group_by(gh_project_name) %>% 
+    filter(team > 9.0)
+    
+peq_gph = menor %>%
+    ggplot(aes(x = team, y = build)) +
+  xlab("Time(Até 3 membros)") + ylab("Tempo de build") + 
+  geom_line(aes(colour=build)) + 
+  geom_point(aes(colour=build)) + 
+  scale_x_continuous() +
+  theme_bw()
+
+medio_gph = medio %>%
+  ggplot(aes(x = team, y = build)) +
+  xlab("Time (Entre 3 e 9 membros)") + ylab("Tempo de build") + 
+  geom_line(aes(colour=build)) + 
+  geom_point(aes(colour=build)) + 
+  scale_x_continuous() +
+  theme_bw()
+
+
+grande_gph  = grande %>%
+  ggplot(aes(x = team, y = build)) +
+  xlab("Time (Acima de 10 membros)") + ylab("Tempo de build") + 
+  geom_line(aes(colour=build)) + 
+  geom_point(aes(colour=build)) + 
+  scale_x_continuous() +
+  theme_bw()
+
+tempo %>%
+  ggplot(aes(x = team, y = build)) +
+  xlab("Time (Todos)") + ylab("Tempo de build") + 
+  geom_line(aes(colour=build)) + 
+  geom_point(aes(colour=build)) + 
+  scale_x_continuous() + geom_rug(alpha = .3)
+  theme_bw()
+  
+  tempo %>% 
+    group_by(team) %>% 
+    ggplot(aes(x = build)) + 
+    geom_density(fill="slateblue", color = "slateblue")  + 
+    scale_x_log10() +
+    xlab("Falha de Build (sem novos membros)") +
+    ylab("Projetos") + theme_gray()
+  
+  tempo %>%  
+    group_by(build) %>%
+    ggplot(aes(x = team)) + 
+    geom_histogram(bins = 50, fill = "white", color = "blue") + 
+    xlab("Falha de Build (sem novos membros)") +
+    ylab("Projetos") + scale_x_continuous() +
+    geom_rug(alpha = .5) + theme_gray()
+  ggplot(tempo, aes(y = team, 
+             x = reorder(build, team), fill = build)) + 
+  geom_bar(stat = "identity", position = "dodge") + 
+  xlab("Tempo da build (milissegundos)") +
+  ylab("Time") +
+  coord_flip() + geom_rug(alpha = .3) +
+  theme(axis.text.y=element_blank())
+  
+  mean(tempo$build, na.rm=T)
+  median(tempo$build, na.rm=T)
+  quantile(tempo$build, na.rm=T)
+  
+
+gridExtra::grid.arrange(peq_gph, medio_gph, grande_gph, nrow=3)
+
+scatterPlot <- function(data, col1, col2)
+    
+{
+  plot <- data %>%
+    ggplot(aes_string(x = col1, y = col2, colour = col2)) +
+    geom_point(position = position_jitter(width = 0.9, height = 0), alpha=0.3) + scale_x_log10() +
+    theme(legend.position = "none")
+  return(plot)
+}
+
+p1 <- scatterPlot(tempo, "team", "build")
+p2 <- scatterPlot(grande, "team", "build")
+
+gridExtra::grid.arrange(p1, p2, ncol=1)
+
+ggplot(tempo,aes(team, build, fill=build)) + 
+  geom_point() + 
+  scale_color_manual(values = c('#999999','#E69F00')) + 
+  theme(legend.position=c(0,1), legend.justification=c(0,1))
+
+ggplot(tempo, aes(x=team, y=build)) +
+    geom_point(shape=1,      # Use hollow circles
+               position=position_jitter(width=1,height=.5), alpha=.5)
+
+ggplot(tempo, aes(x=team, y=build)) + geom_point(shape=1) +
+    scale_colour_hue(l=50) + # Use a slightly darker palette than normal
+    geom_smooth(method=lm,   # Add linear regression lines
+                se=FALSE,    # Don't add shaded confidence region
+                fullrange=TRUE) # Extend regression lines
+data <- list(trace1, trace2, trace3, trace4)
+layout <- list(
+  legend = list(
+    x = 0.5, 
+    y = 1.0
+  ), 
+  title = "Daily Activity"
+)
+p <- plot_ly(data = tempo, x = ~team, y = ~build,
+        marker = list(size = 10,
+                       color = 'rgba(255, 182, 193, .9)',
+                       line = list(color = 'rgba(152, 0, 0, .8)',
+                                   width = 2))) %>%
+  layout(title = 'Styled Scatter',
+         yaxis = list(zeroline = FALSE),
+         xaxis = list(zeroline = FALSE))
+
+p
+
+```
